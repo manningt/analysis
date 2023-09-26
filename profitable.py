@@ -47,9 +47,11 @@ if print_it:
    print(f"processed {row_number} rows")
    print(f"Fri: {days_tour_count_list_date_key[4]}")
    print(f"Fri: {days_tour_count_list_doy_key[4]}")
-   print(f"Sat: {days_tour_count_list_date_key[5]}")
-   print(f"Sun: {days_tour_count_list_date_key[6]}")
+   # print(f"Sat: {days_tour_count_list_date_key[5]}")
+   # print(f"Sun: {days_tour_count_list_date_key[6]}")
 
+analyze_it = False
+if analyze_it:
    profitable_days_count= [0]*7
    for day_of_week in range(4, 7):
       for date, tour_count in days_tour_count_list_date_key[day_of_week].items():
@@ -68,9 +70,10 @@ if plot_it:
    
    fig = plt.figure(figsize = (16, 6)) #size in inches
    for day_of_week in range(4, 7):
-      # plt.bar(list(days_tour_count_list[day_of_week].keys()), list(days_tour_count_list[day_of_week].values()), width = 0.4)
-      plt.bar(list(days_tour_count_list_doy_key[day_of_week].keys()), list(days_tour_count_list_doy_key[day_of_week].values()), width = 1)
+      plt.bar(list(days_tour_count_list_doy_key[day_of_week].keys()), list(days_tour_count_list_doy_key[day_of_week].values()))
    
+   plt.yticks(range(0,24))
+   plt.axhline(10,color='red') #horizontal profitability line
    plt.xlabel("Days")
    plt.ylabel("Tours")
    plt.title("Tours per day")
