@@ -29,6 +29,7 @@ start_day_of_year= 365
 end_day_of_year= 0
 start_week_of_year= 52
 graphed_year = None
+tours_total = 0
 
 csvReader = csv.DictReader(open(filename))
 for row in csvReader:
@@ -54,6 +55,7 @@ for row in csvReader:
          end_day_of_year= day_of_year
 
       row_tour_count= round(float(row['Qty']))
+      tours_total += row_tour_count
 
       if date_w_year in days_tour_count_list_date_key[day_of_week]:
          days_tour_count_list_date_key[day_of_week][date_w_year] += row_tour_count
@@ -69,7 +71,7 @@ for day_of_week in range(4, 7):
       tour_date = datetime.datetime.strptime(date, '%Y-%m-%d')
       week_of_year= tour_date.isocalendar().week
       day_of_week= tour_date.weekday()
-      scaled_doy= ((week_of_year - start_week_of_year) * 4) + (day_of_week - 3) #the 4 multiplier leaves a gap between weeks; -3 make it 1 based
+      scaled_doy= ((week_of_year - start_week_of_year) * 4) + (day_of_week - 4) #the 4 multiplier leaves a gap between weeks
       days_tour_count_list_doys_key[day_of_week][scaled_doy] = tour_count
 
 print_it = False
@@ -101,14 +103,32 @@ if plot_it:
 
    # import numpy as np
    import matplotlib.pyplot as plt
+
+   background_color = 'black'
+   font_color = 'white'
    
-   fig = plt.figure(figsize = (16, 6)) #size in inches
+   fig = plt.figure(figsize = (16, 6), facecolor=background_color) #size in inches
+   ax = plt.axes()
+   ax.set_facecolor(background_color) #plot background color
+   ax.spines['bottom'].set_color(font_color)
+   ax.tick_params(axis='x', colors=font_color)
+   ax.spines['left'].set_color(font_color)
+   ax.tick_params(axis='y', colors=font_color)
+
+   revenue= int(round(tours_total*10, -2)) #round to hundreds
+   expense= int(round((end_day_of_year-start_day_of_year)*PROFIT_THRESHOLD, -2))
+
+   # text(x, y, string, kwarg**) where y is the tick?
+   ax.text(1, 20, f"Approximated Values:\nRevenue=${revenue}\nExpense=${expense}\n      Loss=${revenue-expense}", 
+         bbox={'facecolor': font_color, 'alpha': 0.8, 'pad': 8})
+
    for day_of_week in range(4, 7):
       plt.bar(list(days_tour_count_list_doys_key[day_of_week].keys()), list(days_tour_count_list_doys_key[day_of_week].values()))
    
    plt.yticks(range(0,24))
    plt.axhline(10,color='red') #horizontal profitability line
-   plt.xlabel(f"{start_date}  -through-  {end_date}")
-   plt.ylabel("Tours")
-   plt.title(f"Tours per day for {graphed_year}")
+   plt.xlabel(f"{start_date}  -through-  {end_date}", color=font_color)
+   plt.ylabel("Tours", color=font_color)
+   plt.title(f"Tours per day for {graphed_year}", color=font_color)
+   plt.legend(['Profitability','Friday', 'Saturday', 'Sunday'])
    plt.show()
