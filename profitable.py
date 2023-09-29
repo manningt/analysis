@@ -23,13 +23,13 @@ filename = askopenfilename() # show an "Open" dialog box and return the path to 
 row_number = 0
 PROFIT_THRESHOLD= round(3.25*(20+15))
 days_tour_count_list_date_key = [dict() for x in range(7)]
-# days_tour_count_list_doy_key = [dict() for x in range(7)] #by day of year
 days_tour_count_list_doys_key = [dict() for x in range(7)] #day of year scaled
 start_day_of_year= 365
 end_day_of_year= 0
 start_week_of_year= 52
 graphed_year = None
 tours_total = 0
+tours_per_day_maximum = 0
 
 csvReader = csv.DictReader(open(filename))
 for row in csvReader:
@@ -66,6 +66,7 @@ for row in csvReader:
    # else:
    #    print(f"Skipping row={row_number} with category={row['Category']}")
 
+# make another list using scaled day of year for key instead of year-day-month
 for day_of_week in range(4, 7):
    for date, tour_count in days_tour_count_list_date_key[day_of_week].items():
       tour_date = datetime.datetime.strptime(date, '%Y-%m-%d')
@@ -73,6 +74,8 @@ for day_of_week in range(4, 7):
       day_of_week= tour_date.weekday()
       scaled_doy= ((week_of_year - start_week_of_year) * 4) + (day_of_week - 4) #the 4 multiplier leaves a gap between weeks
       days_tour_count_list_doys_key[day_of_week][scaled_doy] = tour_count
+      if tour_count > tours_per_day_maximum:
+         tours_per_day_maximum= tour_count
 
 print_it = False
 if print_it:
@@ -81,7 +84,7 @@ if print_it:
    for day_of_week in range(4, 7):
       print(f"{day_label_list[day_of_week-4]}: {days_tour_count_list_date_key[day_of_week]}")
       # print(f"{day_label_list[day_of_week-4]}: {days_tour_count_list_doy_key[day_of_week]}")
-      print(f"{day_label_list[day_of_week-4]}: {days_tour_count_list_doys_key[day_of_week]}")
+      print(f"{day_label_list[day_of_week-4]} length={len(days_tour_count_list_date_key[day_of_week])}: {days_tour_count_list_doys_key[day_of_week]}")
  
 analyze_it = False
 if analyze_it:
@@ -98,11 +101,9 @@ if analyze_it:
 
 plot_it = True
 if plot_it:
-   start_date = datetime.datetime.strptime(graphed_year + "-" + str(start_day_of_year), "%Y-%j").strftime("%B %d")
-   end_date = datetime.datetime.strptime(graphed_year + "-" + str(end_day_of_year), "%Y-%j").strftime("%B %d")
-
    # import numpy as np
    import matplotlib.pyplot as plt
+   import math
 
    background_color = 'black'
    font_color = 'white'
@@ -125,9 +126,29 @@ if plot_it:
    for day_of_week in range(4, 7):
       plt.bar(list(days_tour_count_list_doys_key[day_of_week].keys()), list(days_tour_count_list_doys_key[day_of_week].values()))
    
-   plt.yticks(range(0,24))
    plt.axhline(10,color='red') #horizontal profitability line
-   plt.xlabel(f"{start_date}  -through-  {end_date}", color=font_color)
+
+   # print(f"tours_per_day_maximum= {tours_per_day_maximum}")
+   y_tick_spacing = 2
+   plt.yticks(range(0,tours_per_day_maximum + y_tick_spacing, y_tick_spacing))
+
+   weekend_count = math.ceil((end_day_of_year - start_day_of_year)/7)
+   BARS_PER_WEEKEND = 4
+   plt.xticks(range(1, weekend_count*BARS_PER_WEEKEND, BARS_PER_WEEKEND))
+   labels = [item.get_text() for item in ax.get_xticklabels()]
+   for index, value in enumerate(labels):
+      labels[index] = datetime.datetime.strptime(graphed_year + "-" + str(start_day_of_year + 1 + (index*7)), "%Y-%j").strftime("%b%d")
+      # labels[index] = datetime.daßtetime.strptime(graphed_year + "-" + str(start_day_of_year+int(value)), "%Y-%j").strftime("%b%d")
+   # print(f"labels={labels}")
+   ax.set_xticklabels(labels)
+
+   USE_XLABEL = False
+   if USE_XLABEL:
+      start_date = datetime.datetime.strptime(graphed_year + "-" + str(start_day_of_year), "%Y-%j").strftime("%B%d")
+      end_date = datetime.datetime.strptime(graphed_year + "-" + str(end_day_of_year), "%Y-%j").strftime("%B%d")
+      print(f"end_day_of_year={end_day_of_year} ({end_date}); start_day_of_year{start_day_of_year} ({start_date}); diff={end_day_of_year - start_day_of_year}")
+      plt.xlabel(f"{start_date}  -through-  {end_date}", color=font_color)
+
    plt.ylabel("Tours", color=font_color)
    plt.title(f"Tours per day for {graphed_year}", color=font_color)
    plt.legend(['Profitability','Friday', 'Saturday', 'Sunday'])
