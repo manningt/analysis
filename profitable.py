@@ -21,7 +21,7 @@ filename = askopenfilename() # show an "Open" dialog box and return the path to 
 # print(filename)
 
 row_number = 0
-PROFIT_THRESHOLD= round(3.25*(20+15))
+PROFIT_THRESHOLD= round(3*(20+15))
 days_tour_count_list_date_key = [dict() for x in range(7)]
 days_tour_count_list_doys_key = [dict() for x in range(7)] #day of year scaled
 start_day_of_year= 365
@@ -30,6 +30,7 @@ start_week_of_year= 52
 graphed_year = None
 tours_total = 0
 tours_per_day_maximum = 0
+revenue_total = 0
 
 csvReader = csv.DictReader(open(filename))
 for row in csvReader:
@@ -56,6 +57,7 @@ for row in csvReader:
 
       row_tour_count= round(float(row['Qty']))
       tours_total += row_tour_count
+      revenue_total += int(float(row['Gross Sales'].replace('$', '')))
 
       if date_w_year in days_tour_count_list_date_key[day_of_week]:
          days_tour_count_list_date_key[day_of_week][date_w_year] += row_tour_count
@@ -108,7 +110,9 @@ if plot_it:
    background_color = 'black'
    font_color = 'white'
    
-   fig = plt.figure(figsize = (16, 6), facecolor=background_color) #size in inches
+   width = 16
+   height = 6
+   fig = plt.figure(figsize = (width, height), facecolor=background_color) #size in inches
    ax = plt.axes()
    ax.set_facecolor(background_color) #plot background color
    ax.spines['bottom'].set_color(font_color)
@@ -116,17 +120,17 @@ if plot_it:
    ax.spines['left'].set_color(font_color)
    ax.tick_params(axis='y', colors=font_color)
 
-   revenue= int(round(tours_total*10, -2)) #round to hundreds
+   revenue = revenue_total
    expense= int(round((end_day_of_year-start_day_of_year)*PROFIT_THRESHOLD, -2))
 
-   # text(x, y, string, kwarg**) where y is the tick?
-   ax.text(1, 20, f"Approximated Values:\nRevenue=${revenue}\nExpense=${expense}\n      Loss=${revenue-expense}", 
+   # text(x, y, string, kwarg**) 
+   ax.text((width/2), tours_per_day_maximum-3, f"Total Tours={tours_total}\nRevenue=${revenue}\nExpense=${expense} (Approximate)\n      Loss=${revenue-expense}", 
          bbox={'facecolor': font_color, 'alpha': 0.8, 'pad': 8})
 
    for day_of_week in range(4, 7):
       plt.bar(list(days_tour_count_list_doys_key[day_of_week].keys()), list(days_tour_count_list_doys_key[day_of_week].values()))
    
-   plt.axhline(10,color='red') #horizontal profitability line
+   plt.axhline(9,color='red') #horizontal profitability line
 
    # print(f"tours_per_day_maximum= {tours_per_day_maximum}")
    y_tick_spacing = 2
@@ -138,7 +142,6 @@ if plot_it:
    labels = [item.get_text() for item in ax.get_xticklabels()]
    for index, value in enumerate(labels):
       labels[index] = datetime.datetime.strptime(graphed_year + "-" + str(start_day_of_year + 1 + (index*7)), "%Y-%j").strftime("%b%d")
-      # labels[index] = datetime.daßtetime.strptime(graphed_year + "-" + str(start_day_of_year+int(value)), "%Y-%j").strftime("%b%d")
    # print(f"labels={labels}")
    ax.set_xticklabels(labels)
 
