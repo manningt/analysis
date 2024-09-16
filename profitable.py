@@ -13,7 +13,7 @@ import csv
 import datetime
 
 # export TK_SILENCE_DEPRECATION=1
-from tkinter import Tk     # from tkinter import Tk for Python 3.x
+from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 
 Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
@@ -21,12 +21,13 @@ filename = askopenfilename() # show an "Open" dialog box and return the path to 
 # print(filename)
 
 row_number = 0
-PROFIT_THRESHOLD= round(3*(20+15))
+PROFIT_THRESHOLD= round(3.5*(20+16)*1.3)  #per day; 2 days at $21, 1 day at $18 in 2024; the 1.3 multiplier is for taxes
 days_tour_count_list_date_key = [dict() for x in range(7)]
 days_tour_count_list_doys_key = [dict() for x in range(7)] #day of year scaled
 start_day_of_year= 365
 end_day_of_year= 0
 start_week_of_year= 52
+end_week_of_year= 0
 graphed_year = None
 tours_total = 0
 tours_per_day_maximum = 0
@@ -45,6 +46,8 @@ for row in csvReader:
       week_of_year= tour_date.isocalendar().week
       if week_of_year < start_week_of_year:
          start_week_of_year= week_of_year
+      if week_of_year > end_week_of_year:
+         end_week_of_year= week_of_year
       day_of_year = tour_date.timetuple().tm_yday
       if day_of_year < start_day_of_year:
          start_day_of_year= day_of_year
@@ -79,6 +82,7 @@ for day_of_week in range(4, 7):
       if tour_count > tours_per_day_maximum:
          tours_per_day_maximum= tour_count
 
+
 print_it = False
 if print_it:
    print(f"processed {row_number} rows;  starting day of year = {start_day_of_year} starting week of year = {start_week_of_year}")
@@ -87,8 +91,12 @@ if print_it:
       print(f"{day_label_list[day_of_week-4]}: {days_tour_count_list_date_key[day_of_week]}")
       # print(f"{day_label_list[day_of_week-4]}: {days_tour_count_list_doy_key[day_of_week]}")
       print(f"{day_label_list[day_of_week-4]} length={len(days_tour_count_list_date_key[day_of_week])}: {days_tour_count_list_doys_key[day_of_week]}")
- 
-analyze_it = False
+
+
+paid_weeks= (end_week_of_year-start_week_of_year) + 1 # undetermined why off by 1
+expense= paid_weeks*PROFIT_THRESHOLD*3
+
+analyze_it = True
 if analyze_it:
    profitable_days_count= [0]*7
    for day_of_week in range(4, 7):
@@ -100,10 +108,11 @@ if analyze_it:
             f"tours={sum(days_tour_count_list_date_key[day_of_week].values())} "
             f"days={len(days_tour_count_list_date_key[day_of_week])} "
             f"profitable_days={profitable_days_count[day_of_week]}")
+   print(f"{PROFIT_THRESHOLD=} {tours_per_day_maximum=} {paid_weeks= } {expense= }")
+
 
 plot_it = True
 if plot_it:
-   # import numpy as np
    import matplotlib.pyplot as plt
    import math
 
@@ -121,10 +130,9 @@ if plot_it:
    ax.tick_params(axis='y', colors=font_color)
 
    revenue = revenue_total
-   expense= int(round((end_day_of_year-start_day_of_year)*PROFIT_THRESHOLD, -2))
 
    # text(x, y, string, kwarg**) 
-   ax.text((width/2), tours_per_day_maximum-3, f"Total Tours={tours_total}\nRevenue=${revenue}\nExpense=${expense} (Approximate)\n      Loss=${revenue-expense}", 
+   ax.text((width/2), tours_per_day_maximum-3, f"Total Tours (not including groups)={tours_total}\nRevenue=${revenue_total}\nExpense=${expense} (Approximate)\n      Loss=${revenue-expense}", 
          bbox={'facecolor': font_color, 'alpha': 0.8, 'pad': 8})
 
    for day_of_week in range(4, 7):
@@ -132,7 +140,6 @@ if plot_it:
    
    plt.axhline(9,color='red') #horizontal profitability line
 
-   # print(f"tours_per_day_maximum= {tours_per_day_maximum}")
    y_tick_spacing = 2
    plt.yticks(range(0,tours_per_day_maximum + y_tick_spacing, y_tick_spacing))
 
