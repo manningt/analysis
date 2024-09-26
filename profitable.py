@@ -40,40 +40,41 @@ class Parsed_results:
       for row in csvReader:
          self.row_number += 1
          if row['Category'] == 'Tours':
-            tour_date = datetime.datetime.strptime(row['Date'], '%Y-%m-%d') #tour_date includes HH:MM:SS
-            date_w_year= tour_date.strftime('%Y-%m-%d')
-            self.graphed_year= tour_date.strftime('%Y')
-            # date_wo_year= tour_date.strftime('%m-%d')
-
-            day_of_week= tour_date.weekday()
-            week_of_year= tour_date.isocalendar().week
-            day_of_year = tour_date.timetuple().tm_yday
-
-            if week_of_year < self.week_of_year[self.START]:
-               self.week_of_year[self.START]= week_of_year
-            if week_of_year > self.week_of_year[self.END]:
-               self.week_of_year[self.END]= week_of_year
-
-            if day_of_year < self.day_of_year[self.START]:
-               self.day_of_year[self.START]= day_of_year
-               # adjust start_day if there were no sales on Friday or Saturday
-               if day_of_week == 5:
-                  self.day_of_year[self.START] -= 1
-               if day_of_week == 6:
-                  self.day_of_year[self.START] -= 2
-            if day_of_year > self.day_of_year[self.END]:
-               self.day_of_year[self.END]= day_of_year
-
             row_tour_count= round(float(row['Qty']))
-            self.tours_total += row_tour_count
-            self.revenue_total += int(float(row['Gross Sales'].replace('$', '')))
+            if row_tour_count < 11: # skip group tours
+               tour_date = datetime.datetime.strptime(row['Date'], '%Y-%m-%d') #tour_date includes HH:MM:SS
+               date_w_year= tour_date.strftime('%Y-%m-%d')
+               self.graphed_year= tour_date.strftime('%Y')
+               # date_wo_year= tour_date.strftime('%m-%d')
 
-            if date_w_year in self.days_tour_count_list_date_key[day_of_week]:
-               self.days_tour_count_list_date_key[day_of_week][date_w_year] += row_tour_count
-            else:
-               self.days_tour_count_list_date_key[day_of_week][date_w_year] = row_tour_count
+               day_of_week= tour_date.weekday()
+               week_of_year= tour_date.isocalendar().week
+               day_of_year = tour_date.timetuple().tm_yday
 
-            # days_tour_count_list_doy_key[day_of_week][day_of_year] = days_tour_count_list_date_key[day_of_week][date_w_year]
+               if week_of_year < self.week_of_year[self.START]:
+                  self.week_of_year[self.START]= week_of_year
+               if week_of_year > self.week_of_year[self.END]:
+                  self.week_of_year[self.END]= week_of_year
+
+               if day_of_year < self.day_of_year[self.START]:
+                  self.day_of_year[self.START]= day_of_year
+                  # adjust start_day if there were no sales on Friday or Saturday
+                  if day_of_week == 5:
+                     self.day_of_year[self.START] -= 1
+                  if day_of_week == 6:
+                     self.day_of_year[self.START] -= 2
+               if day_of_year > self.day_of_year[self.END]:
+                  self.day_of_year[self.END]= day_of_year
+
+               self.tours_total += row_tour_count
+               self.revenue_total += int(float(row['Gross Sales'].replace('$', '')))
+
+               if date_w_year in self.days_tour_count_list_date_key[day_of_week]:
+                  self.days_tour_count_list_date_key[day_of_week][date_w_year] += row_tour_count
+               else:
+                  self.days_tour_count_list_date_key[day_of_week][date_w_year] = row_tour_count
+
+               # days_tour_count_list_doy_key[day_of_week][day_of_year] = days_tour_count_list_date_key[day_of_week][date_w_year]
          # else:
          #    print(f"Skipping row={row_number} with category={row['Category']}")
 
