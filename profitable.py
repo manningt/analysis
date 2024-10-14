@@ -29,6 +29,7 @@ class Parsed_results:
       self.week_of_year= [52,0] #START, END
       self.graphed_year = None
       self.tours_total = 0
+      self.tours_wo_groups = 0
       self.tours_per_day_maximum = 0
       self.revenue_total = 0
       self.paid_weeks= 0
@@ -41,6 +42,7 @@ class Parsed_results:
          self.row_number += 1
          if row['Category'] == 'Tours':
             row_tour_count= round(float(row['Qty']))
+            self.tours_total += row_tour_count
             if row_tour_count < 11: # skip group tours
                tour_date = datetime.datetime.strptime(row['Date'], '%Y-%m-%d') #tour_date includes HH:MM:SS
                date_w_year= tour_date.strftime('%Y-%m-%d')
@@ -66,7 +68,7 @@ class Parsed_results:
                if day_of_year > self.day_of_year[self.END]:
                   self.day_of_year[self.END]= day_of_year
 
-               self.tours_total += row_tour_count
+               self.tours_wo_groups += row_tour_count
                self.revenue_total += int(float(row['Gross Sales'].replace('$', '')))
 
                if date_w_year in self.days_tour_count_list_date_key[day_of_week]:
@@ -118,7 +120,8 @@ class Parsed_results:
                f"tours={sum(self.days_tour_count_list_date_key[day_of_week].values())} "
                f"days={len(self.days_tour_count_list_date_key[day_of_week])} "
                f"profitable_days={profitable_days_count[day_of_week]}")
-      print(f"{self.PROFIT_THRESHOLD=} {self.tours_per_day_maximum=} {self.paid_weeks= } {self.expense= }")
+      print(f"{self.PROFIT_THRESHOLD=} {self.tours_per_day_maximum=} {self.paid_weeks=} {self.expense=} \
+{self.tours_total=} {self.tours_wo_groups=}")
 
 
    def plot_it(self):
@@ -141,7 +144,7 @@ class Parsed_results:
       loss= self.revenue_total - self.expense
       # text(x, y, string, kwarg**) 
       ax.text((width/2), self.tours_per_day_maximum-3, 
-               f"Total Tours (not including groups)={self.tours_total}\nRevenue=${self.revenue_total}\nExpense=${self.expense} (Approximate)\n      Loss=${loss}", 
+               f"Total Tours (not including groups)={self.tours_wo_groups}\nRevenue=${self.revenue_total}\nExpense=${self.expense} (Approximate)\n      Loss=${loss}", 
                bbox={'facecolor': font_color, 'alpha': 0.8, 'pad': 8})
 
       for day_of_week in range(4, 7):
@@ -197,7 +200,7 @@ if __name__ == "__main__":
    argParser = argparse.ArgumentParser()
    argParser.add_argument("input", nargs='?', type=str, help="input CSV filename with path")
    argParser.add_argument("-p", "--print_parsed_data", action='store_true', help="if true, print parsed info & dont plot")
-   argParser.add_argument("-a", "--analyze_info_output", action='store_false', help="if true, print analysis info")
+   argParser.add_argument("-a", "--analyze_info_output", action='store_true', help="if true, print analysis info")
 
    args = argParser.parse_args()
    # print(f'{args.input= } {args.parse_info_output= } {args.analyze_info_output= }')
@@ -215,11 +218,10 @@ if __name__ == "__main__":
 
    if args.print_parsed_data:
       results.print_parse_info()
+      sys.exit(0)
 
    if args.analyze_info_output:
       results.print_analysis_info()
-
-   if args.print_parsed_data:
       sys.exit(0)
 
    results.plot_it()
